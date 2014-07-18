@@ -9,7 +9,7 @@ import os
 
 import socket
 
-# timeout in seconds
+# timeout in seconds, don't wait a whole minute if the network is down
 timeout = 10
 socket.setdefaulttimeout(timeout)
 
@@ -53,7 +53,7 @@ signal.signal(signal.SIGINT, end_read)
 # Create an object of the class MFRC522
 MIFAREReader = MFRC522.MFRC522()
 
-print "waiting for card"
+print "waiting for card" 
 
 while continue_reading:
     

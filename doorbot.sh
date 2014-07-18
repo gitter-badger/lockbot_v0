@@ -31,20 +31,12 @@ MASTERID=${MASTERID:-0000000000}
 : ${HOSTURL?"Need to set HOSTURL to be able to query acserver"}
 
 
-function clean_up {
-
-	# Perform program exit housekeeping
-	sudo kill $childpid
-	exit
-}
-
-trap clean_up SIGINT SIGTERM
-
-
 cd $CWD
 
 # set the lock pin controller to out
 gpio -g mode 23 out
+
+echo "starting rc522 loop"
 
 while true
 do
