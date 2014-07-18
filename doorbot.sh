@@ -38,6 +38,7 @@ gpio -g mode 23 out
 
 while true
 do
+# need to pass a bunch of login/auth stuff through from env to sudo
 if sudo MASTERID=$MASTERID HOSTURL=$HOSTURL SOCKS_HOST=$SOCKS_HOST SOCKS_PORT=$SOCKS_PORT python doorbot.py;
 then
 echo "open lock on $? signal"

@@ -7,13 +7,18 @@ import signal
 import sys
 import os
 
+import socket
+
+# timeout in seconds
+timeout = 10
+socket.setdefaulttimeout(timeout)
+
 # allow accessing the acserver using a proxy for debugging locally
 if os.environ.has_key('SOCKS_HOST') and os.environ.has_key('SOCKS_PORT') and  os.environ['SOCKS_HOST'] and os.environ['SOCKS_PORT']:
 
   print "socks host " + os.environ['SOCKS_HOST'] + ":" + os.environ['SOCKS_PORT']
   
   import socks
-  import socket
   
   socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS5, 
     os.environ['SOCKS_HOST'], 
@@ -23,10 +28,6 @@ if os.environ.has_key('SOCKS_HOST') and os.environ.has_key('SOCKS_PORT') and  os
 
 import urllib2
 from urllib2 import Request, urlopen, URLError, HTTPError
-
-# timeout in seconds
-timeout = 10
-socket.setdefaulttimeout(timeout)
 
 continue_reading = True
 
