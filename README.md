@@ -15,3 +15,8 @@ http://www.airspayce.com/mikem/bcm2835/
 and here is how to wire up the rfid rc522 with python
 http://geraintw.blogspot.co.uk/2014/01/rfid-and-raspberry-pi.html
 
+install the SPI-Py lib
+https://github.com/lthiery/SPI-Py
+
+
+
