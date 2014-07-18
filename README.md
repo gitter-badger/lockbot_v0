@@ -3,8 +3,11 @@ lockbot_v0
 
 This is a rough and ready script to authenticate and authorize against the acserver.
 
-the list of ids is from the json hash for the carddb.php
+The reader is one of these;
+http://www.ebay.co.uk/itm/Mifare-Antenna-RFID-RC522-Reader-Card-Read-IC-Card-Inductive-Module-Kit-Hot-/261260651843
 
+or if you don't want to wait for it to ship;
+http://www.ebay.co.uk/itm/RFID-RC522-Reader-IC-Card-inductive-Module-Tags-SPI-Interface-Read-and-Write-AR-/141168426039
 
 the info on installing the bcm2835 library was from here;
 http://bsd.ee/~hadara/blog/?p=1017
