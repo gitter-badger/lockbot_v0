@@ -106,14 +106,15 @@ while continue_reading:
               
           content = response.read()
 
-          print "content:" + content
-            
           if int(content)>0:
             exitcode=0
 
           else:
-            sys.exit(2)
+            exitcode=2
 
         # Make sure to stop scanning for cards
         continue_reading = False
 
+
+GPIO.cleanup()
+os._exit(exitcode)

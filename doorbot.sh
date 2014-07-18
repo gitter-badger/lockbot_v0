@@ -31,6 +31,16 @@ MASTERID=${MASTERID:-0000000000}
 : ${HOSTURL?"Need to set HOSTURL to be able to query acserver"}
 
 
+function clean_up {
+
+	# Perform program exit housekeeping
+	sudo kill $childpid
+	exit
+}
+
+trap clean_up SIGINT SIGTERM
+
+
 cd $CWD
 
 # set the lock pin controller to out
@@ -39,8 +49,9 @@ gpio -g mode 23 out
 while true
 do
 # need to pass a bunch of login/auth stuff through from env to sudo
-if sudo MASTERID=$MASTERID HOSTURL=$HOSTURL SOCKS_HOST=$SOCKS_HOST SOCKS_PORT=$SOCKS_PORT python doorbot.py;
-then
+sudo MASTERID=$MASTERID HOSTURL=$HOSTURL SOCKS_HOST=$SOCKS_HOST SOCKS_PORT=$SOCKS_PORT python doorbot.py &
+childpid=$!
+if wait $childpid ; then
 echo "open lock on $? signal"
 sudo /usr/local/bin/gpio -g write 23 0
 sleep 3
