@@ -9,8 +9,10 @@ if [ ! -x "$path_to_git" ] ; then
   sudo apt-get --assume-yes install git-core
 fi
 
-if ! dpkg -s python-socksipy >/dev/null 2>&1 ; then
-  sudo apt-get --assume-yes install python-socksipy
+if [ -n "$SOCKS_HOST" -a -n "$SOCKS_PORT" ]; then
+  if ! dpkg -s python-socksipy >/dev/null 2>&1 ; then
+    sudo apt-get --assume-yes install python-socksipy
+  fi
 fi
 
 path_to_gpio=$(which gpio)

@@ -10,7 +10,7 @@ import os
 # allow accessing the acserver using a proxy for debugging locally
 if os.environ.has_key('SOCKS_HOST') and os.environ.has_key('SOCKS_PORT') and  os.environ['SOCKS_HOST'] and os.environ['SOCKS_PORT']:
 
-  print "using socks proxy " + os.environ['SOCKS_HOST'] + " port " + os.environ['SOCKS_PORT']
+  print "socks host " + os.environ['SOCKS_HOST'] + ":" + os.environ['SOCKS_PORT']
   
   import socks
   import socket
