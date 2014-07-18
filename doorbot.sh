@@ -1,12 +1,17 @@
 #!/bin/bash
 
-CWD=$(pwd)
+CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $CWD
 
 path_to_git=$(which git)
 if [ ! -x "$path_to_git" ] ; then
-  sudo apt-get install git-core
+  sudo apt-get --assume-yes install git-core
 fi
 
+if ! dpkg -s python-socksipy >/dev/null 2>&1 ; then
+  sudo apt-get --assume-yes install python-socksipy
+fi
 
 path_to_gpio=$(which gpio)
 if [ ! -x "$path_to_gpio" ] ; then
@@ -17,15 +22,21 @@ if [ ! -x "$path_to_gpio" ] ; then
 fi
 
 
-: ${MASTERID?"Need to set MASTERID"}
-: ${HOSTURL?"Need to set HOSTURL"}
+MASTERID=${MASTERID:-0000000000}
+# require MASTERID
+#: ${MASTERID?"Need to set MASTERID"}
+
+: ${HOSTURL?"Need to set HOSTURL to be able to query acserver"}
 
 
 cd $CWD
 
+# set the lock pin controller to out
+gpio -g mode 23 out
+
 while true
 do
-if sudo MASTERID=$MASTERID HOSTURL=$HOSTURL python $(pwd)/doorbot.py;
+if sudo MASTERID=$MASTERID HOSTURL=$HOSTURL SOCKS_HOST=$SOCKS_HOST SOCKS_PORT=$SOCKS_PORT python doorbot.py;
 then
 echo "open lock on $? signal"
 sudo /usr/local/bin/gpio -g write 23 0
