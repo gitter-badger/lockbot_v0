@@ -1,9 +1,3 @@
-
-## this file is borrowed from the https://github.com/mxgxw/MFRC522-python
-## which is a class to interface with the MFRC522 module
-
-## @TODO install this from the original repo using chef etc
-
 import RPi.GPIO as GPIO
 import spi
 import signal
@@ -25,7 +19,8 @@ class MFRC522:
   PICC_REQIDL    = 0x26
   PICC_REQALL    = 0x52
   PICC_ANTICOLL  = 0x93
-  PICC_SElECTTAG = 0x93
+  PICC_ANTICOLL2 = 0x95
+  PICC_ANTICOLL3 = 0x97
   PICC_AUTHENT1A = 0x60
   PICC_AUTHENT1B = 0x61
   PICC_READ      = 0x30
@@ -108,8 +103,14 @@ class MFRC522:
   Reserved33      = 0x3E
   Reserved34      = 0x3F
     
-  serNum = []
+  defaultKeyA = [0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]
+  madKeyA = [0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5]
+  NDEFKeyA = [0xD3, 0xF7, 0xD3, 0xF7, 0xD3, 0xF7]
   
+  CASCADE_TAG = 0x88
+  
+  serNum = []
+    
   def __init__(self,spd=1000000):
     spi.openSPI(speed=spd)
     GPIO.setmode(GPIO.BOARD)
@@ -166,6 +167,8 @@ class MFRC522:
     
     self.Write_MFRC522(self.CommandReg, self.PCD_IDLE);  
     
+    #print "len(sendData) "+str(len(sendData))
+    
     while(i<len(sendData)):
       self.Write_MFRC522(self.FIFODataReg, sendData[i])
       i = i+1
@@ -184,12 +187,18 @@ class MFRC522:
     
     self.ClearBitMask(self.BitFramingReg, 0x80)
   
+    
+    #print "status1 "+ str(status) + "i is "+str(i)
+  
     if i != 0:
       if (self.Read_MFRC522(self.ErrorReg) & 0x1B)==0x00:
         status = self.MI_OK
 
         if n & irqEn & 0x01:
+          print "self.MI_NOTAGERR"
           status = self.MI_NOTAGERR
+     
+
       
         if command == self.PCD_TRANSCEIVE:
           n = self.Read_MFRC522(self.FIFOLevelReg)
@@ -224,13 +233,45 @@ class MFRC522:
     TagType.append(reqMode);
     (status,backData,backBits) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, TagType)
   
+    print "backbits "+str(backBits)+" hex "+hex(backBits)
+  
     if ((status != self.MI_OK) | (backBits != 0x10)):
       status = self.MI_ERR
-      
+     
     return (status,backBits)
   
+  def MFRC522_GetUID(self):
+    backData = []
+    serNumCheck = 0
+    
+    # Get the UID of the card
+    loop = 1
+    cascade = True
+    uid=[]
+    
+    #Loop through, testing for cascade tag
+    while cascade == True and loop <4:
+       uidtest=[]  
+       (status,uidtest) = self.MFRC522_Anticoll(loop)
+                  
+       #Check for cascade flag in first byte
+       cascade = (uidtest[0]==self.CASCADE_TAG)   
+
+       # Select the scanned tag based on first 4 bytes of UID regardless of length
+       if loop == 1:
+           self.MFRC522_SelectTag(uidtest)
+           
+       # Remove check byte and cascade flag for UID
+       if cascade:
+           uid+=uidtest[1:4]
+       else:
+           uid+=uidtest[0:4]
+       loop += 1
   
-  def MFRC522_Anticoll(self):
+    return (status,uid)
+  
+
+  def MFRC522_Anticoll(self,level):
     backData = []
     serNumCheck = 0
     
@@ -238,9 +279,17 @@ class MFRC522:
   
     self.Write_MFRC522(self.BitFramingReg, 0x00)
     
-    serNum.append(self.PICC_ANTICOLL)
-    serNum.append(0x20)
+    if level==1:
+      serNum.append(self.PICC_ANTICOLL)
+    elif level==2:
+      serNum.append(self.PICC_ANTICOLL2)
+    elif level==3:
+      serNum.append(self.PICC_ANTICOLL3)
+    else:
+      status = self.MI_ERR
     
+    serNum.append(0x20)
+       
     (status,backData,backBits) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE,serNum)
     
     if(status == self.MI_OK):
@@ -278,7 +327,7 @@ class MFRC522:
   def MFRC522_SelectTag(self, serNum):
     backData = []
     buf = []
-    buf.append(self.PICC_SElECTTAG)
+    buf.append(self.PICC_ANTICOLL)
     buf.append(0x70)
     i = 0
     while i<5:
@@ -290,31 +339,27 @@ class MFRC522:
     (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_TRANSCEIVE, buf)
     
     if (status == self.MI_OK) and (backLen == 0x18):
-      print "Size: " + str(backData[0])
       return    backData[0]
     else:
       return 0
   
   def MFRC522_Auth(self, authMode, BlockAddr, Sectorkey, serNum):
     buff = []
-
+    #print "Auth ID :"+",".join(map(str,serNum))
+    
     # First byte should be the authMode (A or B)
     buff.append(authMode)
 
     # Second byte is the trailerBlock (usually 7)
     buff.append(BlockAddr)
 
-    # Now we need to append the authKey which usually is 6 bytes of 0xFF
-    i = 0
-    while(i < len(Sectorkey)):
-      buff.append(Sectorkey[i])
-      i = i + 1
-    i = 0
-
-    # Next we append the first 4 bytes of the UID
-    while(i < 4):
-      buff.append(serNum[i])
-      i = i +1
+    # Now we need to append the authKey which usually is 6 bytes of 0xFF 
+    buff+=Sectorkey
+    
+    # Next we append the last 4 bytes of the UID
+    authuid=serNum[len(serNum)-4:len(serNum)]
+    buff+=authuid
+    #print "Auth ID :"+",".join(map(str,authuid))
 
     # Now we start the authentication itself
     (status, backData, backLen) = self.MFRC522_ToCard(self.PCD_AUTHENT,buff)
@@ -323,7 +368,7 @@ class MFRC522:
     if not(status == self.MI_OK):
       print "AUTH ERROR!!"
     if not (self.Read_MFRC522(self.Status2Reg) & 0x08) != 0:
-      print "AUTH ERROR(status2reg & 0x08) != 0"
+      print "AUTH ERROR("+str(self.Read_MFRC522(self.Status2Reg) & 0x08)+") != 0"
 
     # Return the status
     return status

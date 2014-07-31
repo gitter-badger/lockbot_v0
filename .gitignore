@@ -1,6 +1,7 @@
 
 carddb.json
 wiringPi
+log.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
