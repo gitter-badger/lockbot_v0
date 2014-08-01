@@ -2,6 +2,8 @@
 carddb.json
 wiringPi
 log.txt
+quick2wire-gpio-admin/
+quick2wire-python-api/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
