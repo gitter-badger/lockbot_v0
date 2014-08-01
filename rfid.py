@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+# this is a modified version of the following script
 # SL030 RFID reader driver for skpang supplied SL030 Mifare reader
 # (c) 2013 Thinking Binaries Ltd, David Whale
 
@@ -38,7 +39,7 @@ socket.setdefaulttimeout(timeout)
 # if 'SERVER_SOFTWARE' in os.environ
 
 # allow accessing the acserver using a proxy for debugging locally
-if 'SOCKS_HOST' in os.environ and 'SOCKS_PORT'  in os.environ and 'SOCKS_HOST'  in os.environ and 'SOCKS_PORT'  in os.environ:
+if 'SOCKS_HOST' in os.environ and os.environ['SOCKS_HOST'] and 'SOCKS_PORT' in os.environ and os.environ['SOCKS_PORT']:
 
 	print( "socks host " + os.environ['SOCKS_HOST'] + ":" + os.environ['SOCKS_PORT'])
 #
@@ -61,7 +62,6 @@ from urllib.request import Request, urlopen, URLError, HTTPError
 masterid = os.environ['MASTERID']
 print("masterid:"+masterid)
 
-masterid = "B337FAA4"
 host = os.environ['HOSTURL']
 
 def error(str):
@@ -206,30 +206,6 @@ def fixrate():
 	os.system("sudo modprobe i2c_bcm2708 baudrate=" + str(newspeed))
 	time.sleep(1.0)
 
-
-
-###########################################################################
-# Simple test program
-#
-# Just run rfid.py to run this test program against the driver.
-#
-# For your own application, copy these lines into a new file
-# and put this at the top of your new file:
-#
-# import rfid
-#
-# Then modify your application to suit
-
-
-# fill in this map with your card id's
-
-cards = {
-	"2B53B49B"       : "whaleygeek", 
-	"04982B29EE0280" : "1", 
-	"EAC85517"       : "David",
-	#"24B1E145"       : "Daniel",
-	"C2091F58"       : "4"
-	}
 
 def checkuid(rfid):
 	global masterid
