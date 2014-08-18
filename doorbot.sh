@@ -18,6 +18,8 @@ if [ ! -x "$path_to_git" ] ; then
   sudo apt-get --assume-yes install git-core
 fi
 
+# install the wiring Pi library, which provides the gpio command
+
 path_to_gpio=$(which gpio)
 if [ ! -x "$path_to_gpio" ] ; then
   git clone git://git.drogon.net/wiringPi
@@ -29,16 +31,24 @@ fi
 
 cd $CWD
 
-# set the lock pin controller to out and shut the lock
+# set the lock pin controller to out and shut the lock while the other
+# packages are being installed
+
+# set the lock GPIO pint output and set it to closed
 gpio -g mode 23 out
 gpio -g write 23 1
 
-# green led off red led on
+# init the green led off red led on
 gpio -g mode 17 out
 gpio -g mode 18 out
 gpio -g write 18 1
 gpio -g write 17 0
 
+# quick2wire needs python3
+sudo apt-get --assume-yes install python3 python3-pip
+
+# if you want to debug this script remotely, then setting SOCKS_HOST and
+# SOCKS_PORT to some gateway host, will allow the pi to talk to the acserver
 if [ -n "$SOCKS_HOST" -a -n "$SOCKS_PORT" ]; then
   #if ! dpkg -s python-socksipy >/dev/null 2>&1 ; then
     #sudo apt-get --assume-yes install python-socksipy
@@ -58,8 +68,6 @@ if [ ! -f "/usr/local/bin/gpio-admin" ] ; then
 fi
 
 cd $CWD
-
-sudo apt-get --assume-yes install python3 python3-pip
 
 if ! python3  -c "import quick2wire" ; then
 

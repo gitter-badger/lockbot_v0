@@ -36,12 +36,19 @@ import socket
 timeout = 10
 socket.setdefaulttimeout(timeout)
 
+
+f = open('auth1.log', 'w')
+
+def print_log(message):
+	f.write(message+'\n')
+	f.flush()
+
 # if 'SERVER_SOFTWARE' in os.environ
 
 # allow accessing the acserver using a proxy for debugging locally
 if 'SOCKS_HOST' in os.environ and os.environ['SOCKS_HOST'] and 'SOCKS_PORT' in os.environ and os.environ['SOCKS_PORT']:
 
-	print( "socks host " + os.environ['SOCKS_HOST'] + ":" + os.environ['SOCKS_PORT'])
+	print_log( "socks host " + os.environ['SOCKS_HOST'] + ":" + os.environ['SOCKS_PORT'])
 #
 	import socks
 
@@ -51,6 +58,7 @@ if 'SOCKS_HOST' in os.environ and os.environ['SOCKS_HOST'] and 'SOCKS_PORT' in o
       
 	socket.socket = socks.socksocket
 
+# urllib2 merged into urllib in python3
 try:
     import urllib.request as urllib2
 except:
@@ -60,12 +68,12 @@ from urllib.request import Request, urlopen, URLError, HTTPError
 
 # set these in the environment of whatever script calls this
 masterid = os.environ['MASTERID']
-print("masterid:"+masterid)
+print_log("masterid:"+masterid)
 
 host = os.environ['HOSTURL']
 
 def error(str):
-	print("ERROR:" + str)
+	print_log("ERROR:" + str)
 
 class SL030:
 	def __init__(self):
@@ -106,8 +114,8 @@ class SL030:
 		if first != ord('S'):
 			if first == ord('S') + 0x80:
 				error("I2C clock speed too high, bit7 corruption")
-				print("try: sudo modprobe -r i2c_bcm2708")
-				print("     sudo modprobe i2c_bcm2708 baudrate=50000")
+				print_log("try: sudo modprobe -r i2c_bcm2708")
+				print_log("     sudo modprobe i2c_bcm2708 baudrate=50000")
 			else:
 				error("unrecognised device")
 
@@ -147,7 +155,7 @@ class SL030:
 		elif (type == 0x05):
 			return "mifare 4k, 7 byte UID"
 		elif (type == 0x06):
-			return "mifare DesFilre, 7 byte UID"
+			return "mifare DesFire, 7 byte UID"
 		elif (type == 0x0A):
 			return "other"
 		else:
@@ -209,17 +217,17 @@ def fixrate():
 
 def checkuid(rfid):
 	global masterid
-	print("master id:"+masterid)
+	print_log("master id:"+masterid)
 	
 	if rfid==masterid:
 		pass
-		print("opening lock on master id")
+		print_log("opening lock on master id")
 		return True
 
 	elif rfid in ["880455449D"]:
 
 		pass
-		print("opening lock on list override")
+		print_log("opening lock on list override")
 		return True	
 	
 	else:
@@ -231,22 +239,24 @@ def checkuid(rfid):
 		try:
 			response = urlopen(req)
 		except HTTPError as e:
-			print('The server couldn\'t fulfill the request.')
-			print('Error code: ', e.code)
+			print_log('The server couldn\'t fulfill the request.')
+			print_log('Error code: ', e.code)
 		except URLError as e:
-			print('We failed to reach a server.'+hosturl)
-			print('Reason: ', e.reason)
+			print_log('We failed to reach a server.'+hosturl)
+			print_log('Reason: ', e.reason)
 		else:
 			# everything is fine
 			pass
 			content = response.read()
 			if int(content)==1:
-				return True	
+				print_log("opening lock on 1: "+rfid)
+				return True
 			elif int(content)==2:
 				# is maintainer
+				print_log("opening lock on 2: "+rfid)
 				return True	
 			
-		print( "content was "+str(content))
+		print_log( "content was "+str(content))
 	
 	return False
 
@@ -254,24 +264,24 @@ def checkuid(rfid):
 def example():
 	rfid = SL030()
 	fw = rfid.get_firmware()
-	print("RFID reader firmware:" + fw)
-	print()
+	print_log("RFID reader firmware:" + fw)
+	print_log("")
 
 	while True:
 		rfid.wait_tag()
-		print("card present")
+		print_log("card present")
 
 		if rfid.select_mifare():
 			type = rfid.get_type()
-			print("type:" + rfid.get_typename(type))
+			print_log("type:" + rfid.get_typename(type))
 
 			id = rfid.get_uidstr()
 			try:
 				#user = cards[id]
-				#print(user)
+				#print_log(user)
 				if checkuid(id):
 					
-					print("opening on presentation of ID "+id)
+					print_log("opening on presentation of ID: "+id)
 					
 					# set the lock pin controller
 					GPIO.output(23, 0)
@@ -282,7 +292,7 @@ def example():
 					
 					sleep(3)
 					
-					print("closing")
+					print_log("closing")
 					
 					# set the lock pin controller
 					GPIO.output(23, 1)
@@ -292,9 +302,9 @@ def example():
 					GPIO.output(18, 1)
 						
 				else:
-					print("not opening "+id)
+					print_log("not opening for card id: "+id)
 					for x in range(0, 2):
-						print( "We're on time")
+						print_log( "We're on time")
 						
 						GPIO.output(18, 0)
 						sleep(0.5)
@@ -304,13 +314,14 @@ def example():
 					
 				#os.system("aplay " + user)
 			except KeyError:
-				print("Unknown card:" + id)
+				print_log("Unknown card:" + id)
 
 		rfid.wait_notag()
-		print("card removed")
-		print()
+		print_log("card removed")
+		print_log("")
 
 if __name__ == "__main__":
 	
 	fixrate()
 	example()
+	f.close()
